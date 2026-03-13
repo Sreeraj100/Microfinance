@@ -16,6 +16,7 @@ const app = express();
 
 // Security & CORS middleware
 app.use(helmet());
+// Accept all incoming requests
 app.use(cors({ origin: "*" }));
 
 // Body parsing middleware
