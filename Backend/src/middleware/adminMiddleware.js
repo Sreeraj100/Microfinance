@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
 
-const protect = async (req, res, next) => {
+const adminProtect = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -20,10 +20,16 @@ const protect = async (req, res, next) => {
         .json({ message: "Not authorized, user not found" });
     }
 
+    if (req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Admin access required" });
+    }
+
     next();
   } catch (error) {
     res.status(401).json({ message: "Not authorized, invalid token" });
   }
 };
 
-export { protect };
+export { adminProtect };

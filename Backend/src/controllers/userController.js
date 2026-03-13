@@ -1,9 +1,9 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
+import jwt from "jsonwebtoken";
+import User from "../models/userModel.js";
 
 // Helper
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
 // @desc    Register a new user
@@ -13,12 +13,16 @@ const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
 
   if (!name || !email || !password) {
-    return res.status(400).json({ message: 'Please provide name, email, and password' });
+    return res
+      .status(400)
+      .json({ message: "Please provide name, email, and password" });
   }
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    return res.status(409).json({ message: 'User with this email already exists' });
+    return res
+      .status(409)
+      .json({ message: "User with this email already exists" });
   }
 
   const user = await User.create({ name, email, password, role });
@@ -40,12 +44,14 @@ const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: 'Please provide email and password' });
+    return res
+      .status(400)
+      .json({ message: "Please provide email and password" });
   }
 
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email }).select("+password");
   if (!user || !(await user.matchPassword(password))) {
-    return res.status(401).json({ message: 'Invalid credentials' });
+    return res.status(401).json({ message: "Invalid credentials" });
   }
 
   const token = generateToken(user._id);
@@ -73,7 +79,7 @@ const getUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ message: "User not found" });
   }
   res.json(user);
 };
@@ -84,7 +90,7 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ message: "User not found" });
   }
 
   const { name, email, password, role } = req.body;
@@ -108,9 +114,16 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ message: "User not found" });
   }
-  res.json({ message: 'User deleted successfully' });
+  res.json({ message: "User deleted successfully" });
 };
 
-module.exports = { registerUser, loginUser, getUsers, getUserById, updateUser, deleteUser };
+export {
+  registerUser,
+  loginUser,
+  getUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+};
