@@ -6,6 +6,7 @@ import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
+import { startInterestCron } from "./utils/interestCron.js";
 
 dotenv.config();
 
@@ -31,6 +32,9 @@ app.use("/api/admin", adminRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "User Management API is running" });
 });
+
+// Start 28-day loan interest cron job
+startInterestCron();
 
 // Error handling middleware
 app.use(notFound);

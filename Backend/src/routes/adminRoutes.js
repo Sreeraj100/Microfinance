@@ -15,6 +15,17 @@ import {
   recordFinePayment,
   getUserFineReport,
 } from "../controllers/attendanceController.js";
+import {
+  addLoanTransaction,
+  getUserLoanDetail,
+  getAllUsersLoanOverview,
+} from "../controllers/loanController.js";
+import {
+  recordSavingsPayment,
+  updateSavingsPayment,
+  getUserSavingsDetail,
+  getAllUsersSavingsOverview,
+} from "../controllers/savingsController.js";
 import { adminProtect } from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
@@ -42,5 +53,23 @@ router.get("/attendance/download", adminProtect, downloadMonthlyCSV);
 router.post("/attendance/fine/payment", adminProtect, recordFinePayment);
 // GET /api/admin/attendance/fine/:userId?month=3&year=2026
 router.get("/attendance/fine/:userId", adminProtect, getUserFineReport);
+
+// ─── Loan Management ──────────────────────────────────────────────────────────
+// POST   /api/admin/loans/:userId/transaction — add loan/repayment/interest/fine
+router.post("/loans/:userId/transaction", adminProtect, addLoanTransaction);
+// GET    /api/admin/loans/:userId — full loan ledger + summary for a user
+router.get("/loans/:userId", adminProtect, getUserLoanDetail);
+// GET    /api/admin/loans — all users' loan balances overview
+router.get("/loans", adminProtect, getAllUsersLoanOverview);
+
+// ─── Savings Management ───────────────────────────────────────────────────────
+// POST   /api/admin/savings/:userId/payment — record weekly savings payment
+router.post("/savings/:userId/payment", adminProtect, recordSavingsPayment);
+// PUT    /api/admin/savings/:userId/payment/:paymentId — update a savings entry
+router.put("/savings/:userId/payment/:paymentId", adminProtect, updateSavingsPayment);
+// GET    /api/admin/savings/:userId — full savings history + interest for a user
+router.get("/savings/:userId", adminProtect, getUserSavingsDetail);
+// GET    /api/admin/savings — all users' savings overview
+router.get("/savings", adminProtect, getAllUsersSavingsOverview);
 
 export default router;
