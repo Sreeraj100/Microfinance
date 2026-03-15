@@ -7,16 +7,40 @@ import {
   createAdmin,
   getAllAdmins,
 } from "../controllers/adminController.js";
+import {
+  markBulkAttendance,
+  getAttendanceByDate,
+  getMonthlyAttendanceSummary,
+  downloadMonthlyCSV,
+  recordFinePayment,
+  getUserFineReport,
+} from "../controllers/attendanceController.js";
 import { adminProtect } from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
 
-// All admin routes are protected by adminProtect middleware
+// ─── User Management ──────────────────────────────────────────────────────────
 router.get("/users", adminProtect, getAllUsers);
 router.get("/users/:id", adminProtect, getUserById);
 router.put("/users/:id", adminProtect, updateUser);
 router.delete("/users/:id", adminProtect, deleteUser);
 router.post("/create", adminProtect, createAdmin);
 router.get("/all", adminProtect, getAllAdmins);
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+// Mark weekly attendance for all users (bulk upsert)
+router.post("/attendance", adminProtect, markBulkAttendance);
+// GET /api/admin/attendance?date=2026-03-16&weekStartDay=0
+router.get("/attendance", adminProtect, getAttendanceByDate);
+// GET /api/admin/attendance/monthly?month=3&year=2026
+router.get("/attendance/monthly", adminProtect, getMonthlyAttendanceSummary);
+// GET /api/admin/attendance/download?month=3&year=2026
+router.get("/attendance/download", adminProtect, downloadMonthlyCSV);
+
+// ─── Fine Payments ────────────────────────────────────────────────────────────
+// POST /api/admin/attendance/fine/payment — record a fine payment
+router.post("/attendance/fine/payment", adminProtect, recordFinePayment);
+// GET /api/admin/attendance/fine/:userId?month=3&year=2026
+router.get("/attendance/fine/:userId", adminProtect, getUserFineReport);
 
 export default router;

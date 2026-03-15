@@ -69,8 +69,7 @@ const loginUser = async (req, res) => {
 // @route   GET /api/users
 // @access  Private
 const getUsers = async (req, res) => {
-  const users = await User.find();
-  res.json(users);
+  res.json(req.user);
 };
 
 // @desc    Get user by ID

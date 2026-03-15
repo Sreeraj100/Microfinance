@@ -430,6 +430,203 @@ Authorization: Bearer <admin_jwt_token>
 
 ---
 
+## Attendance & Fines (Admin)
+
+> All attendance routes require a valid JWT token belonging to a user with `role: "admin"`.
+
+### Mark / Update Weekly Attendance
+
+**POST** `/api/admin/attendance`
+
+**Access:** Private/Admin
+
+**Request Body:**
+
+```json
+{
+  "attendanceDate": "2026-03-16T10:00:00.000Z",
+  "weekStartDay": 0,
+  "records": [
+    {
+      "userId": "64abc123...",
+      "status": "present",
+      "note": ""
+    },
+    {
+      "userId": "64def456...",
+      "status": "absent",
+      "note": "Unreachable"
+    }
+  ]
+}
+```
+
+**Success Response — `200 OK`:**
+
+```json
+{
+  "message": "Attendance marked successfully",
+  "weekStart": "2026-03-15T00:00:00.000Z"
+}
+```
+
+---
+
+### Get Attendance by Date (Weekly)
+
+**GET** `/api/admin/attendance?date=2026-03-16&weekStartDay=0`
+
+**Access:** Private/Admin
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `date` | Date string | Yes | Any date within the week you want to fetch |
+| `weekStartDay` | Integer | No | `0` = Sunday, `1` = Monday. Default `0` |
+
+**Success Response — `200 OK`:**
+
+```json
+{
+  "weekStart": "2026-03-15T00:00:00.000Z",
+  "records": [
+    {
+      "_id": "64xyz...",
+      "user": {
+        "_id": "64abc123...",
+        "name": "John Doe",
+        "email": "john@example.com"
+      },
+      "weekStartDate": "2026-03-15T00:00:00.000Z",
+      "attendanceDate": "2026-03-16T10:00:00.000Z",
+      "status": "present",
+      "note": ""
+    }
+  ]
+}
+```
+
+---
+
+### Get Monthly Attendance & Fine Summary
+
+**GET** `/api/admin/attendance/monthly?month=3&year=2026`
+
+**Access:** Private/Admin
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `month` | Integer | Yes | Month number (1-12) |
+| `year` | Integer | Yes | Full year (e.g., 2026) |
+
+**Success Response — `200 OK`:**
+
+```json
+{
+  "month": 3,
+  "year": 2026,
+  "summary": [
+    {
+      "userId": "64abc123...",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "totalWeeks": 4,
+      "present": 3,
+      "absent": 1,
+      "late": 0,
+      "leave": 0,
+      "fineOwed": 20,
+      "totalPaid": 0,
+      "balance": 20
+    }
+  ]
+}
+```
+
+---
+
+### Download Monthly Attendance CSV
+
+**GET** `/api/admin/attendance/download?month=3&year=2026`
+
+**Access:** Private/Admin
+
+**Returns:** A `.csv` file attachment containing the month's summary and fine calculations for all users.
+
+---
+
+### Record Fine Payment
+
+**POST** `/api/admin/attendance/fine/payment`
+
+**Access:** Private/Admin
+
+**Request Body:**
+
+```json
+{
+  "userId": "64abc123...",
+  "amount": 20,
+  "month": 3,
+  "year": 2026,
+  "paidOn": "2026-03-20T14:30:00.000Z",
+  "note": "Paid in cash"
+}
+```
+
+**Success Response — `201 Created`:**
+
+```json
+{
+  "message": "Fine payment recorded",
+  "payment": {
+    "_id": "64ghi...",
+    "user": "64abc123...",
+    "amount": 20,
+    "month": 3,
+    ...
+  }
+}
+```
+
+---
+
+### Get User Fine Report
+
+**GET** `/api/admin/attendance/fine/:userId?month=3&year=2026`
+
+**Access:** Private/Admin
+
+**Success Response — `200 OK`:**
+
+```json
+{
+  "userId": "64abc123...",
+  "name": "John Doe",
+  "email": "john@example.com",
+  "month": 3,
+  "year": 2026,
+  "totalWeeks": 4,
+  "present": 3,
+  "absent": 1,
+  "late": 0,
+  "leave": 0,
+  "fineOwed": 20,
+  "totalPaid": 20,
+  "balance": 0,
+  "payments": [
+    {
+      "_id": "64ghi...",
+      "amount": 20,
+      "paidOn": "2026-03-20T14:30:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
 ## Data Models
 
 ### User
@@ -443,6 +640,33 @@ Authorization: Bearer <admin_jwt_token>
 | `role`      | String (`"user"` \| `"admin"`) | No                        | `"user"` |
 | `createdAt` | Date                           | Auto                      | —        |
 | `updatedAt` | Date                           | Auto                      | —        |
+
+### Attendance
+
+| Field       | Type                           | Required                  | Notes  |
+| ----------- | ------------------------------ | ------------------------- | -------- |
+| `_id`       | ObjectId                       | Auto                      | —        |
+| `user`      | ObjectId (ref: User)           | Yes                       | Member marked |
+| `weekStartDate`| Date                        | Yes                       | Standardized to start of week |
+| `attendanceDate`| Date                       | Yes                       | Actual day admin took attendance |
+| `status`    | String                         | Yes                       | `"present"`, `"absent"`, `"late"`, `"leave"` |
+| `markedBy`  | ObjectId (ref: User)           | No                        | Admin who marked |
+| `note`      | String                         | No                        | —        |
+
+_Includes a compound unique index on `{ user, weekStartDate }`._
+
+### FinePayment
+
+| Field       | Type                           | Required                  | Notes  |
+| ----------- | ------------------------------ | ------------------------- | -------- |
+| `_id`       | ObjectId                       | Auto                      | —        |
+| `user`      | ObjectId (ref: User)           | Yes                       | Member paying |
+| `amount`    | Number                         | Yes (min: 1)              | Amount in ₹ |
+| `month`     | Number                         | Yes                       | 1-12 |
+| `year`      | Number                         | Yes                       | — |
+| `paidOn`    | Date                           | Auto                      | Date of payment |
+| `recordedBy`| ObjectId (ref: User)           | No                        | Admin who recorded |
+| `note`      | String                         | No                        | —        |
 
 ---
 
