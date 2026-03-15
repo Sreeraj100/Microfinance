@@ -312,6 +312,67 @@ const getUserFineReport = async (req, res) => {
     });
 };
 
+// ─── Get Own Attendance Summary (User) ───────────────────────────────────────
+
+// @desc    Logged-in user views their own attendance + fine summary for a month
+// @route   GET /api/users/attendance/me?month=3&year=2026
+// @access  Private (user)
+const getMyAttendanceSummary = async (req, res) => {
+    const userId = req.user._id;
+    const { month, year } = req.query;
+
+    if (!month || !year) {
+        return res.status(400).json({ message: "month and year query params are required" });
+    }
+
+    const m = parseInt(month);
+    const y = parseInt(year);
+
+    const startOfMonth = new Date(y, m - 1, 1);
+    const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
+
+    // Fetch this user's attendance records for the month
+    const records = await Attendance.find({
+        user: userId,
+        attendanceDate: { $gte: startOfMonth, $lte: endOfMonth },
+    }).sort({ attendanceDate: 1 });
+
+    const present = records.filter((r) => r.status === "present").length;
+    const absent = records.filter((r) => r.status === "absent").length;
+    const late = records.filter((r) => r.status === "late").length;
+    const leave = records.filter((r) => r.status === "leave").length;
+    const fineOwed = absent * 20;
+
+    // Fetch fine payments made by this user for the month
+    const payments = await FinePayment.find({ user: userId, month: m, year: y })
+        .select("amount paidOn note");
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+
+    res.json({
+        month: m,
+        year: y,
+        totalWeeks: records.length,
+        present,
+        absent,
+        late,
+        leave,
+        fineOwed,
+        totalPaid,
+        fineBalance: fineOwed - totalPaid,
+        finePayments: payments.map((p) => ({
+            amount: p.amount,
+            paidOn: p.paidOn,
+            note: p.note,
+        })),
+        weeklyRecords: records.map((r) => ({
+            weekStartDate: r.weekStartDate,
+            attendanceDate: r.attendanceDate,
+            status: r.status,
+            note: r.note,
+        })),
+    });
+};
+
 export {
     markBulkAttendance,
     getAttendanceByDate,
@@ -319,4 +380,5 @@ export {
     downloadMonthlyCSV,
     recordFinePayment,
     getUserFineReport,
+    getMyAttendanceSummary,
 };

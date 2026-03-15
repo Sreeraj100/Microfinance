@@ -9,6 +9,7 @@ import {
 } from "../controllers/userController.js";
 import { getMyLoanSummary } from "../controllers/loanController.js";
 import { getMySavingsSummary } from "../controllers/savingsController.js";
+import { getMyAttendanceSummary } from "../controllers/attendanceController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -30,5 +31,8 @@ router.get("/loans/me", protect, getMyLoanSummary);
 // ─── Savings (read-only for user) ────────────────────────────────────────────
 // GET /api/users/savings/me — own savings total + weekly history
 router.get("/savings/me", protect, getMySavingsSummary);
+// ─── Attendance (read-only for user) ─────────────────────────────────────────
+// GET /api/users/attendance/me?month=3&year=2026 — own attendance + fine summary
+router.get("/attendance/me", protect, getMyAttendanceSummary);
 
 export default router;

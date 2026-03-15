@@ -278,6 +278,54 @@ Tokens are returned upon successful login or registration.
 
 ---
 
+### Get My Attendance Summary
+
+**GET** `/api/users/attendance/me?month=3&year=2026`
+
+**Access:** Private (requires valid user JWT)
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `month` | Integer | Yes | Month number (1–12) |
+| `year` | Integer | Yes | Full year (e.g., 2026) |
+
+**Success Response — `200 OK`:**
+
+```json
+{
+  "month": 3,
+  "year": 2026,
+  "totalWeeks": 4,
+  "present": 3,
+  "absent": 1,
+  "late": 0,
+  "leave": 0,
+  "fineOwed": 20,
+  "totalPaid": 20,
+  "fineBalance": 0,
+  "finePayments": [
+    { "amount": 20, "paidOn": "2026-03-20T00:00:00.000Z", "note": "Paid in cash" }
+  ],
+  "weeklyRecords": [
+    {
+      "weekStartDate": "2026-03-09T00:00:00.000Z",
+      "attendanceDate": "2026-03-10T00:00:00.000Z",
+      "status": "present",
+      "note": ""
+    }
+  ]
+}
+```
+
+**Error Responses:**
+| Status | Message |
+|--------|---------|
+| `400` | month and year query params are required |
+| `401` | Not authorized, no token |
+
+---
+
 ## Admin Routes
 
 > All admin routes require a valid JWT token belonging to a user with `role: "admin"`.
