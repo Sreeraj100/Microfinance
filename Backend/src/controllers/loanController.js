@@ -116,7 +116,7 @@ const getAllUsersLoanOverview = async (req, res) => {
       },
     },
     {
-      $unwind: { path: "$userInfo", preserveNullAndEmpty: true },
+      $unwind: { path: "$userInfo", preserveNullAndEmptyArrays: true },
     },
     {
       $project: {

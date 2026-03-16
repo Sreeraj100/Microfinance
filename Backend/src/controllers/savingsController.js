@@ -134,7 +134,7 @@ const getAllUsersSavingsOverview = async (req, res) => {
         as: "userInfo",
       },
     },
-    { $unwind: { path: "$userInfo", preserveNullAndEmpty: true } },
+    { $unwind: { path: "$userInfo", preserveNullAndEmptyArrays: true } },
     {
       $project: {
         userId: "$_id",
