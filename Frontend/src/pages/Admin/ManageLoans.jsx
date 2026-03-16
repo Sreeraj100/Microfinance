@@ -3,6 +3,9 @@ import api from '../../services/api';
 import { toast } from 'react-toastify';
 import moment from 'moment';
 import { useForm } from 'react-hook-form';
+import Pagination from '../../components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 const ManageLoans = () => {
   const [users, setUsers] = useState([]);               // non-admin users for dropdown
@@ -15,6 +18,10 @@ const ManageLoans = () => {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
   const [txSubmitting, setTxSubmitting] = useState(false);
+
+  // Pagination state
+  const [overviewPage, setOverviewPage] = useState(1);
+  const [ledgerPage, setLedgerPage] = useState(1);
 
   // Fetch all users (to pick from when no loan data exists)
   const fetchUsers = useCallback(async () => {
@@ -47,6 +54,7 @@ const ManageLoans = () => {
     setLedgerLoading(true);
     setSelectedUserId(userId);
     setUserLedger(null);
+    setLedgerPage(1);
     try {
       const response = await api.get(`/admin/loans/${userId}`);
       setUserLedger(response.data);
@@ -82,6 +90,7 @@ const ManageLoans = () => {
   const goBack = () => {
     setSelectedUserId(null);
     setUserLedger(null);
+    setOverviewPage(1);
   };
 
   if (loading) return <div className="spinner"></div>;
@@ -100,6 +109,17 @@ const ManageLoans = () => {
       currentBalance: 0,
     };
   });
+
+  const paginatedMembers = allMembers.slice(
+    (overviewPage - 1) * ITEMS_PER_PAGE,
+    overviewPage * ITEMS_PER_PAGE
+  );
+
+  const transactions = userLedger?.transactions || [];
+  const paginatedTx = transactions.slice(
+    (ledgerPage - 1) * ITEMS_PER_PAGE,
+    ledgerPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div>
@@ -120,50 +140,58 @@ const ManageLoans = () => {
             </div>
           ) : (
             <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Member</th>
-                    <th>Total Loan</th>
-                    <th>Repaid</th>
-                    <th>Interest + Fine</th>
-                    <th>Current Balance</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allMembers.map(member => (
-                    <tr key={member.userId}>
-                      <td>
-                        <div style={{ fontWeight: 500 }}>{member.name}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{member.email}</div>
-                      </td>
-                      <td>₹{(member.totalLoan || 0).toFixed(2)}</td>
-                      <td style={{ color: 'var(--primary-color)' }}>₹{(member.totalRepayment || 0).toFixed(2)}</td>
-                      <td style={{ color: '#f59e0b' }}>₹{((member.totalInterest || 0) + (member.totalFine || 0)).toFixed(2)}</td>
-                      <td style={{ color: member.currentBalance > 0 ? 'var(--danger)' : '#10b981', fontWeight: 600 }}>
-                        ₹{(member.currentBalance || 0).toFixed(2)}
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-primary"
-                          style={{ padding: '0.4rem 0.9rem', fontSize: '0.875rem' }}
-                          onClick={() => fetchUserLedger(member.userId)}
-                        >
-                          View / Add
-                        </button>
-                      </td>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Total Loan</th>
+                      <th>Repaid</th>
+                      <th>Interest + Fine</th>
+                      <th>Current Balance</th>
+                      <th>Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paginatedMembers.map(member => (
+                      <tr key={member.userId}>
+                        <td>
+                          <div style={{ fontWeight: 500 }}>{member.name}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{member.email}</div>
+                        </td>
+                        <td>₹{(member.totalLoan || 0).toFixed(2)}</td>
+                        <td style={{ color: 'var(--primary-color)' }}>₹{(member.totalRepayment || 0).toFixed(2)}</td>
+                        <td style={{ color: '#f59e0b' }}>₹{((member.totalInterest || 0) + (member.totalFine || 0)).toFixed(2)}</td>
+                        <td style={{ color: member.currentBalance > 0 ? 'var(--danger)' : '#10b981', fontWeight: 600 }}>
+                          ₹{(member.currentBalance || 0).toFixed(2)}
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-primary"
+                            style={{ padding: '0.4rem 0.9rem', fontSize: '0.875rem' }}
+                            onClick={() => fetchUserLedger(member.userId)}
+                          >
+                            View / Add
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                currentPage={overviewPage}
+                totalItems={allMembers.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setOverviewPage}
+              />
             </div>
           )}
         </>
       ) : (
         <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
           {/* Ledger Section */}
-          <div style={{ flex: 2, minWidth: '400px' }}>
+          <div style={{ flex: 2, minWidth: '300px' }}>
             {ledgerLoading ? (
               <div className="spinner"></div>
             ) : userLedger ? (
@@ -193,48 +221,58 @@ const ManageLoans = () => {
                   <h3 style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', margin: 0 }}>
                     Ledger — {userLedger.user.name}
                   </h3>
-                  {userLedger.transactions.length === 0 ? (
+                  {transactions.length === 0 ? (
                     <p style={{ padding: '1.5rem', color: '#64748b' }}>No transactions yet. Add one using the form.</p>
                   ) : (
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Type</th>
-                          <th>Amount</th>
-                          <th>Recorded By</th>
-                          <th>Note</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {userLedger.transactions.map(tx => (
-                          <tr key={tx._id}>
-                            <td>{moment(tx.date).format('MMM Do YYYY')}</td>
-                            <td>
-                              <span style={{
-                                padding: '0.2rem 0.6rem',
-                                borderRadius: '9999px',
-                                fontSize: '0.8rem',
-                                fontWeight: 600,
-                                background:
-                                  tx.type === 'loan' ? '#fee2e2' :
-                                  tx.type === 'repayment' ? '#dcfce7' :
-                                  tx.type === 'interest' ? '#fef3c7' : '#e0e7ff',
-                                color:
-                                  tx.type === 'loan' ? '#991b1b' :
-                                  tx.type === 'repayment' ? '#166534' :
-                                  tx.type === 'interest' ? '#92400e' : '#3730a3',
-                              }}>
-                                {tx.type}
-                              </span>
-                            </td>
-                            <td style={{ fontWeight: 600 }}>₹{tx.amount.toFixed(2)}</td>
-                            <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{tx.recordedBy?.name || 'Auto'}</td>
-                            <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{tx.note || '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <>
+                      <div className="table-scroll">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Date</th>
+                              <th>Type</th>
+                              <th>Amount</th>
+                              <th>Recorded By</th>
+                              <th>Note</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paginatedTx.map(tx => (
+                              <tr key={tx._id}>
+                                <td>{moment(tx.date).format('MMM Do YYYY')}</td>
+                                <td>
+                                  <span style={{
+                                    padding: '0.2rem 0.6rem',
+                                    borderRadius: '9999px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    background:
+                                      tx.type === 'loan' ? '#fee2e2' :
+                                      tx.type === 'repayment' ? '#dcfce7' :
+                                      tx.type === 'interest' ? '#fef3c7' : '#e0e7ff',
+                                    color:
+                                      tx.type === 'loan' ? '#991b1b' :
+                                      tx.type === 'repayment' ? '#166534' :
+                                      tx.type === 'interest' ? '#92400e' : '#3730a3',
+                                  }}>
+                                    {tx.type}
+                                  </span>
+                                </td>
+                                <td style={{ fontWeight: 600 }}>₹{tx.amount.toFixed(2)}</td>
+                                <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{tx.recordedBy?.name || 'Auto'}</td>
+                                <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{tx.note || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <Pagination
+                        currentPage={ledgerPage}
+                        totalItems={transactions.length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        onPageChange={setLedgerPage}
+                      />
+                    </>
                   )}
                 </div>
               </>
@@ -244,7 +282,7 @@ const ManageLoans = () => {
           </div>
 
           {/* Add Transaction Form */}
-          <div className="card" style={{ flex: 1, minWidth: '300px', alignSelf: 'flex-start' }}>
+          <div className="card" style={{ flex: 1, minWidth: '280px', alignSelf: 'flex-start' }}>
             <h3 className="mb-4">Add Transaction</h3>
             <form onSubmit={handleSubmit(handleTxSubmit)}>
               <div className="input-group">

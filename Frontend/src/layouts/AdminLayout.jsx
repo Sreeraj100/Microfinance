@@ -1,14 +1,15 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import Swal from 'sweetalert2';
 
 const NAV_ITEMS = [
-  { to: '/admin/dashboard', icon: '⬡', label: 'Dashboard'       },
-  { to: '/admin/users',     icon: '👥', label: 'Manage Users'    },
-  { to: '/admin/loans',     icon: '💳', label: 'Manage Loans'    },
-  { to: '/admin/savings',   icon: '🏦', label: 'Manage Savings'  },
-  { to: '/admin/attendance',icon: '📋', label: 'Attendance'      },
-  { to: '/admin/reports',   icon: '📊', label: 'Reports'         },
+  { to: '/admin/dashboard', icon: '⬡', label: 'Dashboard' },
+  { to: '/admin/users', icon: '👥', label: 'Manage Users' },
+  { to: '/admin/loans', icon: '💳', label: 'Manage Loans' },
+  { to: '/admin/savings', icon: '🏦', label: 'Manage Savings' },
+  { to: '/admin/attendance', icon: '📋', label: 'Attendance' },
+  { to: '/admin/reports', icon: '📊', label: 'Reports' },
 ];
 
 const AdminLayout = () => {
@@ -16,7 +17,24 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleLogout = () => { logout(); navigate('/login', { replace: true }); };
+  const handleLogout = () => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You will be logged out of your session.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, logout!',
+      background: '#1a1a1a',
+      color: '#ffffff'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        navigate('/login', { replace: true });
+      }
+    });
+  };
 
   // Close sidebar when clicking a link (mobile)
   const handleNavClick = () => { if (window.innerWidth <= 768) setSidebarOpen(false); };
@@ -53,7 +71,9 @@ const AdminLayout = () => {
 
         {/* Brand */}
         <div className="sidebar-logo">
-          <div className="sidebar-logo__icon" aria-hidden="true">🏦</div>
+          <div className="sidebar-logo__icon" aria-hidden="true">
+            <img src="/Icon.png" alt="" className="sidebar-logo__icon-img" />
+          </div>
           <div>
             <div className="sidebar-logo__text">MicroFinance</div>
             <div className="sidebar-logo__badge">Admin Panel</div>
@@ -76,22 +96,24 @@ const AdminLayout = () => {
           ))}
         </nav>
 
-        {/* User footer */}
         <div className="sidebar-footer">
-          <div className="sidebar-user" onClick={handleLogout} title="Click to logout">
+          <button
+            className="sidebar-logout-btn"
+            onClick={handleLogout}
+            title="Click to logout"
+          >
             <div className="sidebar-avatar" aria-hidden="true">{initials}</div>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div className="sidebar-user__name">{user?.name || 'Admin'}</div>
-              <div className="sidebar-user__role">Administrator</div>
+            <div className="logout-text-wrapper">
+              <span className="logout-label">Logout</span>
+              <span className="logout-user-name">{user?.name || 'Admin'}</span>
             </div>
-            {/* Logout icon */}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="rgba(255,255,255,.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -110,13 +132,13 @@ const AdminLayout = () => {
             >
               {sidebarOpen ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               ) : (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="3" y1="12" x2="21" y2="12"/>
-                  <line x1="3" y1="6"  x2="21" y2="6"/>
-                  <line x1="3" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
                 </svg>
               )}
             </button>
@@ -127,19 +149,6 @@ const AdminLayout = () => {
               <div className="topbar-avatar" aria-hidden="true">{initials}</div>
               <span className="topbar__user-name">{user?.name || 'Admin'}</span>
             </div>
-            <button
-              className="btn btn-danger"
-              onClick={handleLogout}
-              style={{ padding: '0.45rem 1rem', fontSize: '0.8rem' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-              Logout
-            </button>
           </div>
         </header>
 

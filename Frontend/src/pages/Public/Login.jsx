@@ -54,70 +54,70 @@ const Login = () => {
   return (
     <>
       <div className="auth-header">
-        <div className="auth-icon" aria-hidden="true">🏦</div>
+        <img src="/Icon.png" alt="MicroFinance Logo" className="auth-logo-img" />
         <h1>Welcome Back</h1>
         <p>Login to manage your microfinance account</p>
       </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          {/* Email */}
-          <div className="input-group">
-            <label className="input-label" htmlFor="login-email">
-              Email Address
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              className="input-field"
-              placeholder="you@example.com"
-              autoComplete="email"
-              {...registerForm('email')}
-            />
-            {errors.email && <p className="error-text">{errors.email.message}</p>}
-          </div>
-
-          {/* Password with eye toggle */}
-          <div className="input-group">
-            <label className="input-label" htmlFor="login-password">
-              Password
-            </label>
-            <PasswordInput
-              id="login-password"
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              {...registerForm('password')}
-            />
-            {errors.password && <p className="error-text">{errors.password.message}</p>}
-          </div>
-
-          <button
-            type="submit"
-            id="login-submit"
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '1.25rem', padding: '0.875rem' }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                <span style={{
-                  width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)',
-                  borderTopColor: 'white', borderRadius: '50%',
-                  animation: 'spin 0.8s linear infinite', display: 'inline-block'
-                }} />
-                Logging in...
-              </span>
-            ) : 'Login'}
-          </button>
-        </form>
-
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <p style={{ color: '#64748b' }}>
-            Don&apos;t have an account?{' '}
-            <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600 }}>
-              Create account
-            </Link>
-          </p>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        {/* Email */}
+        <div className="input-group">
+          <label className="input-label" htmlFor="login-email">
+            Email Address
+          </label>
+          <input
+            id="login-email"
+            type="email"
+            className="input-field"
+            placeholder="you@example.com"
+            autoComplete="email"
+            {...registerForm('email')}
+          />
+          {errors.email && <p className="error-text">{errors.email.message}</p>}
         </div>
+
+        {/* Password with eye toggle */}
+        <div className="input-group">
+          <label className="input-label" htmlFor="login-password">
+            Password
+          </label>
+          <PasswordInput
+            id="login-password"
+            placeholder="Enter your password"
+            autoComplete="current-password"
+            {...registerForm('password')}
+          />
+          {errors.password && <p className="error-text">{errors.password.message}</p>}
+        </div>
+
+        <button
+          type="submit"
+          id="login-submit"
+          className="btn btn-primary"
+          style={{ width: '100%', marginTop: '1.25rem', padding: '0.875rem' }}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <span style={{
+                width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)',
+                borderTopColor: 'white', borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite', display: 'inline-block'
+              }} />
+              Logging in...
+            </span>
+          ) : 'Login'}
+        </button>
+      </form>
+
+      <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <p style={{ color: '#64748b' }}>
+          Don&apos;t have an account?{' '}
+          <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+            Create account
+          </Link>
+        </p>
+      </div>
     </>
   );
 };

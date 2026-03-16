@@ -70,94 +70,94 @@ const Register = () => {
   return (
     <>
       <div className="auth-header">
-        <div className="auth-icon" aria-hidden="true">✦</div>
+        <img src="/Icon.png" alt="MicroFinance Logo" className="auth-logo-img" />
         <h1>Create Account</h1>
         <p>Join our microfinance community</p>
       </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          {/* Name */}
-          <div className="input-group">
-            <label className="input-label" htmlFor="reg-name">Full Name</label>
-            <input
-              id="reg-name"
-              type="text"
-              className="input-field"
-              placeholder="John Doe"
-              autoComplete="name"
-              {...registerForm('name')}
-            />
-            {errors.name && <p className="error-text">{errors.name.message}</p>}
-          </div>
-
-          {/* Email */}
-          <div className="input-group">
-            <label className="input-label" htmlFor="reg-email">Email Address</label>
-            <input
-              id="reg-email"
-              type="email"
-              className="input-field"
-              placeholder="you@example.com"
-              autoComplete="email"
-              {...registerForm('email')}
-            />
-            {errors.email && <p className="error-text">{errors.email.message}</p>}
-          </div>
-
-          {/* Password with eye icon + strength meter */}
-          <div className="input-group">
-            <label className="input-label" htmlFor="reg-password">Password</label>
-            <PasswordInput
-              id="reg-password"
-              placeholder="Create a strong password"
-              autoComplete="new-password"
-              {...registerForm('password')}
-            />
-            {errors.password && <p className="error-text">{errors.password.message}</p>}
-            {/* Live password strength meter */}
-            <PasswordStrengthMeter password={watchedPassword} />
-          </div>
-
-          {/* Confirm Password with eye icon */}
-          <div className="input-group">
-            <label className="input-label" htmlFor="reg-confirm">Confirm Password</label>
-            <PasswordInput
-              id="reg-confirm"
-              placeholder="Repeat your password"
-              autoComplete="new-password"
-              {...registerForm('confirmPassword')}
-            />
-            {errors.confirmPassword && <p className="error-text">{errors.confirmPassword.message}</p>}
-          </div>
-
-          <button
-            type="submit"
-            id="register-submit"
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '1.25rem', padding: '0.875rem' }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                <span style={{
-                  width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)',
-                  borderTopColor: 'white', borderRadius: '50%',
-                  animation: 'spin 0.8s linear infinite', display: 'inline-block'
-                }} />
-                Creating account...
-              </span>
-            ) : 'Create Account'}
-          </button>
-        </form>
-
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <p style={{ color: '#64748b' }}>
-            Already have an account?{' '}
-            <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>
-              Login here
-            </Link>
-          </p>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        {/* Name */}
+        <div className="input-group">
+          <label className="input-label" htmlFor="reg-name">Full Name</label>
+          <input
+            id="reg-name"
+            type="text"
+            className="input-field"
+            placeholder="John Doe"
+            autoComplete="name"
+            {...registerForm('name')}
+          />
+          {errors.name && <p className="error-text">{errors.name.message}</p>}
         </div>
+
+        {/* Email */}
+        <div className="input-group">
+          <label className="input-label" htmlFor="reg-email">Email Address</label>
+          <input
+            id="reg-email"
+            type="email"
+            className="input-field"
+            placeholder="you@example.com"
+            autoComplete="email"
+            {...registerForm('email')}
+          />
+          {errors.email && <p className="error-text">{errors.email.message}</p>}
+        </div>
+
+        {/* Password with eye icon + strength meter */}
+        <div className="input-group">
+          <label className="input-label" htmlFor="reg-password">Password</label>
+          <PasswordInput
+            id="reg-password"
+            placeholder="Create a strong password"
+            autoComplete="new-password"
+            {...registerForm('password')}
+          />
+          {errors.password && <p className="error-text">{errors.password.message}</p>}
+          {/* Live password strength meter */}
+          <PasswordStrengthMeter password={watchedPassword} />
+        </div>
+
+        {/* Confirm Password with eye icon */}
+        <div className="input-group">
+          <label className="input-label" htmlFor="reg-confirm">Confirm Password</label>
+          <PasswordInput
+            id="reg-confirm"
+            placeholder="Repeat your password"
+            autoComplete="new-password"
+            {...registerForm('confirmPassword')}
+          />
+          {errors.confirmPassword && <p className="error-text">{errors.confirmPassword.message}</p>}
+        </div>
+
+        <button
+          type="submit"
+          id="register-submit"
+          className="btn btn-primary"
+          style={{ width: '100%', marginTop: '1.25rem', padding: '0.875rem' }}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <span style={{
+                width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.4)',
+                borderTopColor: 'white', borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite', display: 'inline-block'
+              }} />
+              Creating account...
+            </span>
+          ) : 'Create Account'}
+        </button>
+      </form>
+
+      <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <p style={{ color: '#64748b' }}>
+          Already have an account?{' '}
+          <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+            Login here
+          </Link>
+        </p>
+      </div>
     </>
   );
 };
