@@ -1,0 +1,75 @@
+import express from "express";
+import {
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  createAdmin,
+  getAllAdmins,
+} from "../controllers/adminController.js";
+import {
+  markBulkAttendance,
+  getAttendanceByDate,
+  getMonthlyAttendanceSummary,
+  downloadMonthlyCSV,
+  recordFinePayment,
+  getUserFineReport,
+} from "../controllers/attendanceController.js";
+import {
+  addLoanTransaction,
+  getUserLoanDetail,
+  getAllUsersLoanOverview,
+} from "../controllers/loanController.js";
+import {
+  recordSavingsPayment,
+  updateSavingsPayment,
+  getUserSavingsDetail,
+  getAllUsersSavingsOverview,
+} from "../controllers/savingsController.js";
+import { adminProtect } from "../middleware/adminMiddleware.js";
+
+const router = express.Router();
+
+// ─── User Management ──────────────────────────────────────────────────────────
+router.get("/users", adminProtect, getAllUsers);
+router.get("/users/:id", adminProtect, getUserById);
+router.put("/users/:id", adminProtect, updateUser);
+router.delete("/users/:id", adminProtect, deleteUser);
+router.post("/create", adminProtect, createAdmin);
+router.get("/all", adminProtect, getAllAdmins);
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+// Mark weekly attendance for all users (bulk upsert)
+router.post("/attendance", adminProtect, markBulkAttendance);
+// GET /api/admin/attendance?date=2026-03-16&weekStartDay=0
+router.get("/attendance", adminProtect, getAttendanceByDate);
+// GET /api/admin/attendance/monthly?month=3&year=2026
+router.get("/attendance/monthly", adminProtect, getMonthlyAttendanceSummary);
+// GET /api/admin/attendance/download?month=3&year=2026
+router.get("/attendance/download", adminProtect, downloadMonthlyCSV);
+
+// ─── Fine Payments ────────────────────────────────────────────────────────────
+// POST /api/admin/attendance/fine/payment — record a fine payment
+router.post("/attendance/fine/payment", adminProtect, recordFinePayment);
+// GET /api/admin/attendance/fine/:userId?month=3&year=2026
+router.get("/attendance/fine/:userId", adminProtect, getUserFineReport);
+
+// ─── Loan Management ──────────────────────────────────────────────────────────
+// POST   /api/admin/loans/:userId/transaction — add loan/repayment/interest/fine
+router.post("/loans/:userId/transaction", adminProtect, addLoanTransaction);
+// GET    /api/admin/loans/:userId — full loan ledger + summary for a user
+router.get("/loans/:userId", adminProtect, getUserLoanDetail);
+// GET    /api/admin/loans — all users' loan balances overview
+router.get("/loans", adminProtect, getAllUsersLoanOverview);
+
+// ─── Savings Management ───────────────────────────────────────────────────────
+// POST   /api/admin/savings/:userId/payment — record weekly savings payment
+router.post("/savings/:userId/payment", adminProtect, recordSavingsPayment);
+// PUT    /api/admin/savings/:userId/payment/:paymentId — update a savings entry
+router.put("/savings/:userId/payment/:paymentId", adminProtect, updateSavingsPayment);
+// GET    /api/admin/savings/:userId — full savings history + interest for a user
+router.get("/savings/:userId", adminProtect, getUserSavingsDetail);
+// GET    /api/admin/savings — all users' savings overview
+router.get("/savings", adminProtect, getAllUsersSavingsOverview);
+
+export default router;
