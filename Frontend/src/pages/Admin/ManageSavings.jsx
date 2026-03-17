@@ -3,6 +3,9 @@ import api from '../../services/api';
 import { toast } from 'react-toastify';
 import moment from 'moment';
 import { useForm } from 'react-hook-form';
+import Pagination from '../../components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 const ManageSavings = () => {
   const [users, setUsers] = useState([]);
@@ -21,6 +24,10 @@ const ManageSavings = () => {
     }
   });
   const [submitLoading, setSubmitLoading] = useState(false);
+
+  // Pagination state
+  const [overviewPage, setOverviewPage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -53,6 +60,7 @@ const ManageSavings = () => {
     setSelectedUserName(name);
     setDetailLoading(true);
     setUserSavingsDetail(null);
+    setHistoryPage(1);
     try {
       const response = await api.get(`/admin/savings/${userId}`);
       setUserSavingsDetail(response.data);
@@ -93,6 +101,7 @@ const ManageSavings = () => {
   const goBack = () => {
     setSelectedUserId(null);
     setUserSavingsDetail(null);
+    setOverviewPage(1);
   };
 
   if (loading) return <div className="spinner"></div>;
@@ -110,6 +119,17 @@ const ManageSavings = () => {
       lastPaidOn: null,
     };
   });
+
+  const paginatedMembers = allMembers.slice(
+    (overviewPage - 1) * ITEMS_PER_PAGE,
+    overviewPage * ITEMS_PER_PAGE
+  );
+
+  const payments = userSavingsDetail?.payments || [];
+  const paginatedPayments = payments.slice(
+    (historyPage - 1) * ITEMS_PER_PAGE,
+    historyPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div>
@@ -130,52 +150,60 @@ const ManageSavings = () => {
             </div>
           ) : (
             <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Member</th>
-                    <th>Total Savings</th>
-                    <th>Interest (1%)</th>
-                    <th>Payments</th>
-                    <th>Last Paid</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allMembers.map(member => (
-                    <tr key={member.userId}>
-                      <td>
-                        <div style={{ fontWeight: 500 }}>{member.name}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{member.email}</div>
-                      </td>
-                      <td style={{ color: 'var(--secondary-color)', fontWeight: 600 }}>
-                        ₹{(member.totalSavings || 0).toFixed(2)}
-                      </td>
-                      <td style={{ color: 'var(--primary-color)' }}>
-                        ₹{(member.savingsInterest || 0).toFixed(2)}
-                      </td>
-                      <td>{member.paymentsCount || 0}</td>
-                      <td>{member.lastPaidOn ? moment(member.lastPaidOn).format('MMM Do YYYY') : <span style={{ color: '#94a3b8' }}>No payments yet</span>}</td>
-                      <td>
-                        <button
-                          className="btn btn-secondary"
-                          style={{ padding: '0.4rem 0.9rem', fontSize: '0.875rem' }}
-                          onClick={() => openUserDetail(member.userId, member.name)}
-                        >
-                          View / Add
-                        </button>
-                      </td>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Total Savings</th>
+                      <th>Interest (1%)</th>
+                      <th>Payments</th>
+                      <th>Last Paid</th>
+                      <th>Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paginatedMembers.map(member => (
+                      <tr key={member.userId}>
+                        <td>
+                          <div style={{ fontWeight: 500 }}>{member.name}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{member.email}</div>
+                        </td>
+                        <td style={{ color: 'var(--secondary-color)', fontWeight: 600 }}>
+                          ₹{(member.totalSavings || 0).toFixed(2)}
+                        </td>
+                        <td style={{ color: 'var(--primary-color)' }}>
+                          ₹{(member.savingsInterest || 0).toFixed(2)}
+                        </td>
+                        <td>{member.paymentsCount || 0}</td>
+                        <td>{member.lastPaidOn ? moment(member.lastPaidOn).format('MMM Do YYYY') : <span style={{ color: '#94a3b8' }}>No payments yet</span>}</td>
+                        <td>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ padding: '0.4rem 0.9rem', fontSize: '0.875rem' }}
+                            onClick={() => openUserDetail(member.userId, member.name)}
+                          >
+                            View / Add
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                currentPage={overviewPage}
+                totalItems={allMembers.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setOverviewPage}
+              />
             </div>
           )}
         </>
       ) : (
         <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
           {/* Detail View */}
-          <div style={{ flex: 2, minWidth: '400px' }}>
+          <div style={{ flex: 2, minWidth: '300px' }}>
             {detailLoading ? (
               <div className="spinner"></div>
             ) : userSavingsDetail ? (
@@ -213,31 +241,41 @@ const ManageSavings = () => {
                   <h3 style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', margin: 0 }}>
                     Savings History — {selectedUserName}
                   </h3>
-                  {userSavingsDetail.payments.length === 0 ? (
+                  {payments.length === 0 ? (
                     <p style={{ padding: '1.5rem', color: '#64748b' }}>No payments yet. Record one using the form.</p>
                   ) : (
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Week Of</th>
-                          <th>Paid On</th>
-                          <th>Amount</th>
-                          <th>Recorded By</th>
-                          <th>Note</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {userSavingsDetail.payments.map(payment => (
-                          <tr key={payment._id}>
-                            <td>{moment(payment.weekStartDate).format('MMM Do YYYY')}</td>
-                            <td>{moment(payment.paidOn).format('MMM Do YYYY')}</td>
-                            <td style={{ fontWeight: 600, color: 'var(--secondary-color)' }}>₹{(payment.amount || 0).toFixed(2)}</td>
-                            <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{payment.recordedBy?.name || '—'}</td>
-                            <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{payment.note || '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <>
+                      <div className="table-scroll">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Week Of</th>
+                              <th>Paid On</th>
+                              <th>Amount</th>
+                              <th>Recorded By</th>
+                              <th>Note</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paginatedPayments.map(payment => (
+                              <tr key={payment._id}>
+                                <td>{moment(payment.weekStartDate).format('MMM Do YYYY')}</td>
+                                <td>{moment(payment.paidOn).format('MMM Do YYYY')}</td>
+                                <td style={{ fontWeight: 600, color: 'var(--secondary-color)' }}>₹{(payment.amount || 0).toFixed(2)}</td>
+                                <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{payment.recordedBy?.name || '—'}</td>
+                                <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{payment.note || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <Pagination
+                        currentPage={historyPage}
+                        totalItems={payments.length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        onPageChange={setHistoryPage}
+                      />
+                    </>
                   )}
                 </div>
               </>
@@ -247,7 +285,7 @@ const ManageSavings = () => {
           </div>
 
           {/* New Payment Form */}
-          <div className="card" style={{ flex: 1, minWidth: '300px', alignSelf: 'flex-start' }}>
+          <div className="card" style={{ flex: 1, minWidth: '280px', alignSelf: 'flex-start' }}>
             <h3 className="mb-4">Record Savings — {selectedUserName}</h3>
             <form onSubmit={handleSubmit(onSubmitPayment)}>
               <div className="input-group">

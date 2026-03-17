@@ -11,7 +11,10 @@ const PublicLayout = () => {
         <div className="auth-deco__orb auth-deco__orb--3" />
 
         <div className="auth-deco__content">
-          <div className="auth-deco__logo">🏦 MicroFinance</div>
+          <div className="auth-deco__logo">
+            <img src="/Icon.png" alt="" className="auth-deco__logo-img" aria-hidden="true" />
+            MicroFinance
+          </div>
           <p className="auth-deco__tagline">
             Empowering communities through transparent savings, loans, and financial inclusion.
           </p>

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 import moment from 'moment';
+import Pagination from '../../components/Pagination';
 
 const STATUS_OPTIONS = ['present', 'absent', 'late', 'leave'];
 const STATUS_LABELS = { present: '✓ Present', absent: '✗ Absent', late: '⏰ Late', leave: '🌿 Leave' };
@@ -11,6 +12,8 @@ const STATUS_COLORS = {
   late: { bg: '#fef3c7', color: '#92400e' },
   leave: { bg: '#e0e7ff', color: '#3730a3' },
 };
+
+const ITEMS_PER_PAGE = 10;
 
 const ManageAttendance = () => {
   const [activeTab, setActiveTab] = useState('mark');
@@ -34,6 +37,11 @@ const ManageAttendance = () => {
   const [finePaidOn, setFinePaidOn] = useState(moment().format('YYYY-MM-DD'));
   const [fineNote, setFineNote] = useState('');
   const [submittingFine, setSubmittingFine] = useState(false);
+
+  // ─── Pagination state ─────────────────────────────────────────────────────────
+  const [markPage, setMarkPage] = useState(1);
+  const [monthlyPage, setMonthlyPage] = useState(1);
+  const [finesPage, setFinesPage] = useState(1);
 
   // ─── Fetch users ──────────────────────────────────────────────────────────────
   const fetchUsers = useCallback(async () => {
@@ -123,8 +131,7 @@ const ManageAttendance = () => {
   // ─── CSV Download ─────────────────────────────────────────────────────────────
   const downloadCSV = () => {
     const token = localStorage.getItem('token');
-    const base = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-    // Include token as a query param since browser window.open won't send headers
+    const base = import.meta.env.VITE_API_URL || 'https://microfinance-u92z.onrender.com/api';
     window.open(`${base}/admin/attendance/download?month=${month}&year=${year}&token=${token}`, '_blank');
   };
 
@@ -168,12 +175,18 @@ const ManageAttendance = () => {
     transition: 'all 0.2s',
   });
 
+  // Paginated slices
+  const paginatedUsers = users.slice((markPage - 1) * ITEMS_PER_PAGE, markPage * ITEMS_PER_PAGE);
+  const paginatedMonthly = monthlyReport.slice((monthlyPage - 1) * ITEMS_PER_PAGE, monthlyPage * ITEMS_PER_PAGE);
+  const finesData = monthlyReport.filter(r => r.fineOwed > 0 || r.totalPaid > 0);
+  const paginatedFines = finesData.slice((finesPage - 1) * ITEMS_PER_PAGE, finesPage * ITEMS_PER_PAGE);
+
   return (
     <div>
       {/* Tab Bar */}
       <div className="flex-between mb-4">
         <h2>Attendance Management</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button style={tabStyle('mark')} onClick={() => setActiveTab('mark')}>📋 Mark Weekly</button>
           <button style={tabStyle('monthly')} onClick={() => setActiveTab('monthly')}>📅 Monthly Report</button>
           <button style={{ ...tabStyle('fines'), background: activeTab === 'fines' ? '#ef4444' : '#e2e8f0', color: activeTab === 'fines' ? 'white' : '#475569' }}
@@ -207,59 +220,67 @@ const ManageAttendance = () => {
             <p style={{ color: '#64748b' }}>No members found. Register users first.</p>
           ) : (
             <>
-              <table className="data-table" style={{ marginBottom: '1.5rem' }}>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Member</th>
-                    <th>Status</th>
-                    <th>Note</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user, idx) => (
-                    <tr key={user._id}>
-                      <td style={{ color: '#94a3b8' }}>{idx + 1}</td>
-                      <td style={{ fontWeight: 500 }}>{user.name}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          {STATUS_OPTIONS.map(s => (
-                            <button
-                              key={s}
-                              type="button"
-                              onClick={() => handleStatusChange(user._id, s)}
-                              style={{
-                                padding: '0.3rem 0.7rem',
-                                border: '2px solid',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontSize: '0.8rem',
-                                fontWeight: 600,
-                                borderColor: records[user._id]?.status === s ? STATUS_COLORS[s].color : '#cbd5e1',
-                                background: records[user._id]?.status === s ? STATUS_COLORS[s].bg : 'transparent',
-                                color: records[user._id]?.status === s ? STATUS_COLORS[s].color : '#94a3b8',
-                              }}
-                            >
-                              {STATUS_LABELS[s]}
-                            </button>
-                          ))}
-                        </div>
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Optional note"
-                          style={{ padding: '0.4rem 0.75rem', fontSize: '0.875rem' }}
-                          value={records[user._id]?.note || ''}
-                          onChange={e => handleNoteChange(user._id, e.target.value)}
-                        />
-                      </td>
+              <div className="table-scroll">
+                <table className="data-table" style={{ marginBottom: '1.5rem' }}>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Member</th>
+                      <th>Status</th>
+                      <th>Note</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ textAlign: 'right' }}>
+                  </thead>
+                  <tbody>
+                    {paginatedUsers.map((user, idx) => (
+                      <tr key={user._id}>
+                        <td style={{ color: '#94a3b8' }}>{(markPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
+                        <td style={{ fontWeight: 500 }}>{user.name}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                            {STATUS_OPTIONS.map(s => (
+                              <button
+                                key={s}
+                                type="button"
+                                onClick={() => handleStatusChange(user._id, s)}
+                                style={{
+                                  padding: '0.3rem 0.7rem',
+                                  border: '2px solid',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 600,
+                                  borderColor: records[user._id]?.status === s ? STATUS_COLORS[s].color : '#cbd5e1',
+                                  background: records[user._id]?.status === s ? STATUS_COLORS[s].bg : 'transparent',
+                                  color: records[user._id]?.status === s ? STATUS_COLORS[s].color : '#94a3b8',
+                                }}
+                              >
+                                {STATUS_LABELS[s]}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Optional note"
+                            style={{ padding: '0.4rem 0.75rem', fontSize: '0.875rem' }}
+                            value={records[user._id]?.note || ''}
+                            onChange={e => handleNoteChange(user._id, e.target.value)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                currentPage={markPage}
+                totalItems={users.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setMarkPage}
+              />
+              <div style={{ textAlign: 'right', marginTop: '1rem' }}>
                 <button className="btn btn-primary" onClick={submitAttendance} disabled={submitting}>
                   {submitting ? 'Saving...' : `✓ Save Attendance for ${moment(attendanceDate).format('MMM Do YYYY')}`}
                 </button>
@@ -276,7 +297,7 @@ const ManageAttendance = () => {
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
               <select
                 value={month}
-                onChange={e => setMonth(Number(e.target.value))}
+                onChange={e => { setMonth(Number(e.target.value)); setMonthlyPage(1); }}
                 className="input-field"
                 style={{ padding: '0.5rem' }}
               >
@@ -287,7 +308,7 @@ const ManageAttendance = () => {
               <input
                 type="number"
                 value={year}
-                onChange={e => setYear(Number(e.target.value))}
+                onChange={e => { setYear(Number(e.target.value)); setMonthlyPage(1); }}
                 className="input-field"
                 style={{ width: '90px', padding: '0.5rem' }}
               />
@@ -304,39 +325,49 @@ const ManageAttendance = () => {
           {loadingReport ? <div className="spinner"></div> : monthlyReport.length === 0 ? (
             <p style={{ color: '#64748b' }}>No attendance records found for {moment().month(month - 1).format('MMMM')} {year}.</p>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Weeks</th>
-                  <th>Present</th>
-                  <th>Absent</th>
-                  <th>Late / Leave</th>
-                  <th>Fine Owed</th>
-                  <th>Fine Paid</th>
-                  <th>Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {monthlyReport.map(r => (
-                  <tr key={r.userId}>
-                    <td>
-                      <div style={{ fontWeight: 500 }}>{r.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{r.email}</div>
-                    </td>
-                    <td>{r.totalWeeks}</td>
-                    <td style={{ color: 'var(--secondary-color)', fontWeight: 600 }}>{r.present}</td>
-                    <td style={{ color: r.absent > 0 ? 'var(--danger)' : 'inherit' }}>{r.absent}</td>
-                    <td>{r.late} / {r.leave}</td>
-                    <td>₹{(r.fineOwed || 0).toFixed(2)}</td>
-                    <td style={{ color: 'var(--primary-color)' }}>₹{(r.totalPaid || 0).toFixed(2)}</td>
-                    <td style={{ color: r.balance > 0 ? 'var(--danger)' : '#10b981', fontWeight: 600 }}>
-                      ₹{(r.balance || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Weeks</th>
+                      <th>Present</th>
+                      <th>Absent</th>
+                      <th>Late / Leave</th>
+                      <th>Fine Owed</th>
+                      <th>Fine Paid</th>
+                      <th>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedMonthly.map(r => (
+                      <tr key={r.userId}>
+                        <td>
+                          <div style={{ fontWeight: 500 }}>{r.name}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{r.email}</div>
+                        </td>
+                        <td>{r.totalWeeks}</td>
+                        <td style={{ color: 'var(--secondary-color)', fontWeight: 600 }}>{r.present}</td>
+                        <td style={{ color: r.absent > 0 ? 'var(--danger)' : 'inherit' }}>{r.absent}</td>
+                        <td>{r.late} / {r.leave}</td>
+                        <td>₹{(r.fineOwed || 0).toFixed(2)}</td>
+                        <td style={{ color: 'var(--primary-color)' }}>₹{(r.totalPaid || 0).toFixed(2)}</td>
+                        <td style={{ color: r.balance > 0 ? 'var(--danger)' : '#10b981', fontWeight: 600 }}>
+                          ₹{(r.balance || 0).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                currentPage={monthlyPage}
+                totalItems={monthlyReport.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setMonthlyPage}
+              />
+            </>
           )}
         </div>
       )}
@@ -345,13 +376,13 @@ const ManageAttendance = () => {
       {activeTab === 'fines' && (
         <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
           {/* Record Fine Form */}
-          <div className="card" style={{ flex: 1, minWidth: '300px' }}>
+          <div className="card" style={{ flex: 1, minWidth: '280px' }}>
             <h3 className="mb-4">Record Fine Payment</h3>
             <form onSubmit={submitFine}>
               <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <div style={{ flex: 1 }}>
                   <label className="input-label">Month</label>
-                  <select value={month} onChange={e => setMonth(Number(e.target.value))} className="input-field" style={{ padding: '0.5rem' }}>
+                  <select value={month} onChange={e => { setMonth(Number(e.target.value)); setFinesPage(1); }} className="input-field" style={{ padding: '0.5rem' }}>
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                       <option key={m} value={m}>{moment().month(m - 1).format('MMMM')}</option>
                     ))}
@@ -359,7 +390,7 @@ const ManageAttendance = () => {
                 </div>
                 <div style={{ width: 90 }}>
                   <label className="input-label">Year</label>
-                  <input type="number" value={year} onChange={e => setYear(Number(e.target.value))} className="input-field" style={{ padding: '0.5rem' }} />
+                  <input type="number" value={year} onChange={e => { setYear(Number(e.target.value)); setFinesPage(1); }} className="input-field" style={{ padding: '0.5rem' }} />
                 </div>
               </div>
 
@@ -372,7 +403,6 @@ const ManageAttendance = () => {
                   required
                 >
                   <option value="">— Choose Member —</option>
-                  {/* Prefer monthly report (has balances), fall back to users list */}
                   {(monthlyReport.length > 0 ? monthlyReport : users.map(u => ({ userId: u._id, name: u.name, balance: null }))).map(u => (
                     <option key={u.userId} value={u.userId}>
                       {u.name}{u.balance != null ? ` (Bal: ₹${(u.balance).toFixed(2)})` : ''}
@@ -424,7 +454,7 @@ const ManageAttendance = () => {
           </div>
 
           {/* Outstanding Fines Table */}
-          <div className="card" style={{ flex: 2, minWidth: '400px' }}>
+          <div className="card" style={{ flex: 2, minWidth: '300px' }}>
             <div className="flex-between mb-4">
               <h3 style={{ margin: 0 }}>
                 Fine Summary — {moment().month(month - 1).format('MMMM')} {year}
@@ -433,33 +463,43 @@ const ManageAttendance = () => {
 
             {loadingReport ? <div className="spinner"></div> : (
               <>
-                {monthlyReport.filter(r => r.fineOwed > 0 || r.totalPaid > 0).length === 0 ? (
+                {finesData.length === 0 ? (
                   <p style={{ color: '#64748b' }}>No fine data for this month. Mark attendance first to generate fines.</p>
                 ) : (
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Member</th>
-                        <th>Fine Owed</th>
-                        <th>Paid</th>
-                        <th>Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthlyReport.filter(r => r.fineOwed > 0 || r.totalPaid > 0).map(r => (
-                        <tr key={r.userId}>
-                          <td style={{ fontWeight: 500 }}>{r.name}</td>
-                          <td>₹{(r.fineOwed || 0).toFixed(2)}</td>
-                          <td style={{ color: 'var(--primary-color)' }}>₹{(r.totalPaid || 0).toFixed(2)}</td>
-                          <td>
-                            <span className={`badge badge-${r.balance > 0 ? 'danger' : 'success'}`}>
-                              ₹{(r.balance || 0).toFixed(2)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <>
+                    <div className="table-scroll">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Member</th>
+                            <th>Fine Owed</th>
+                            <th>Paid</th>
+                            <th>Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedFines.map(r => (
+                            <tr key={r.userId}>
+                              <td style={{ fontWeight: 500 }}>{r.name}</td>
+                              <td>₹{(r.fineOwed || 0).toFixed(2)}</td>
+                              <td style={{ color: 'var(--primary-color)' }}>₹{(r.totalPaid || 0).toFixed(2)}</td>
+                              <td>
+                                <span className={`badge badge-${r.balance > 0 ? 'danger' : 'success'}`}>
+                                  ₹{(r.balance || 0).toFixed(2)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <Pagination
+                      currentPage={finesPage}
+                      totalItems={finesData.length}
+                      itemsPerPage={ITEMS_PER_PAGE}
+                      onPageChange={setFinesPage}
+                    />
+                  </>
                 )}
               </>
             )}

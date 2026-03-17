@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import moment from 'moment';
+import Pagination from '../../components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 const MyLoans = () => {
   const [loanData, setLoanData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchLoans = async () => {
@@ -25,6 +29,12 @@ const MyLoans = () => {
   if (loading) return <div className="spinner"></div>;
   if (error) return <div className="card" style={{ color: 'var(--danger)' }}>{error}</div>;
   if (!loanData) return <div className="card">No loan data available.</div>;
+
+  const repayments = loanData.repayments || [];
+  const paginatedRepayments = repayments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div>
@@ -53,25 +63,35 @@ const MyLoans = () => {
 
       <div className="table-container mt-4">
         <h3 style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', margin: 0 }}>Repayment History</h3>
-        {loanData.repayments && loanData.repayments.length > 0 ? (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Amount Paid</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loanData.repayments.map((repayment, index) => (
-                <tr key={index}>
-                  <td>{moment(repayment.date).format('MMMM Do YYYY')}</td>
-                  <td style={{ color: 'var(--secondary-color)', fontWeight: 500 }}>
-                    ₹{repayment.amount}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {repayments.length > 0 ? (
+          <>
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Amount Paid</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedRepayments.map((repayment, index) => (
+                    <tr key={index}>
+                      <td>{moment(repayment.date).format('MMMM Do YYYY')}</td>
+                      <td style={{ color: 'var(--secondary-color)', fontWeight: 500 }}>
+                        ₹{repayment.amount}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={repayments.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
+          </>
         ) : (
           <p style={{ padding: '1.5rem', color: '#64748b' }}>No repayment history found.</p>
         )}

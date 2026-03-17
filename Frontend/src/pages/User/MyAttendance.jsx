@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import moment from 'moment';
+import Pagination from '../../components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 const MyAttendance = () => {
   const [attendanceData, setAttendanceData] = useState(null);
@@ -10,12 +13,17 @@ const MyAttendance = () => {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
 
+  const [weeklyPage, setWeeklyPage] = useState(1);
+  const [finePage, setFinePage] = useState(1);
+
   const fetchAttendance = async () => {
     setLoading(true);
     try {
       const response = await api.get(`/users/attendance/me?month=${month}&year=${year}`);
       setAttendanceData(response.data);
       setError(null);
+      setWeeklyPage(1);
+      setFinePage(1);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch attendance information');
     } finally {
@@ -30,6 +38,18 @@ const MyAttendance = () => {
 
   const handleMonthChange = (e) => setMonth(e.target.value);
   const handleYearChange = (e) => setYear(e.target.value);
+
+  const weeklyRecords = attendanceData?.weeklyRecords || [];
+  const finePayments = attendanceData?.finePayments || [];
+
+  const paginatedWeekly = weeklyRecords.slice(
+    (weeklyPage - 1) * ITEMS_PER_PAGE,
+    weeklyPage * ITEMS_PER_PAGE
+  );
+  const paginatedFines = finePayments.slice(
+    (finePage - 1) * ITEMS_PER_PAGE,
+    finePage * ITEMS_PER_PAGE
+  );
 
   return (
     <div>
@@ -89,63 +109,83 @@ const MyAttendance = () => {
 
           <div className="table-container mt-4">
             <h3 style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', margin: 0 }}>Weekly Attendance Records</h3>
-            {attendanceData.weeklyRecords && attendanceData.weeklyRecords.length > 0 ? (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Week Start Date</th>
-                    <th>Attendance Date</th>
-                    <th>Status</th>
-                    <th>Note</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attendanceData.weeklyRecords.map((record, index) => (
-                    <tr key={index}>
-                      <td>{moment(record.weekStartDate).format('MMMM Do YYYY')}</td>
-                      <td>{moment(record.attendanceDate).format('MMMM Do YYYY')}</td>
-                      <td>
-                        <span className={`badge badge-${
-                          record.status === 'present' ? 'success' : 
-                          record.status === 'absent' ? 'danger' : 
-                          record.status === 'late' ? 'warning' : 'info'
-                        }`}>
-                          {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                        </span>
-                      </td>
-                      <td style={{ color: '#64748b' }}>{record.note || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {weeklyRecords.length > 0 ? (
+              <>
+                <div className="table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Week Start Date</th>
+                        <th>Attendance Date</th>
+                        <th>Status</th>
+                        <th>Note</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedWeekly.map((record, index) => (
+                        <tr key={index}>
+                          <td>{moment(record.weekStartDate).format('MMMM Do YYYY')}</td>
+                          <td>{moment(record.attendanceDate).format('MMMM Do YYYY')}</td>
+                          <td>
+                            <span className={`badge badge-${
+                              record.status === 'present' ? 'success' : 
+                              record.status === 'absent' ? 'danger' : 
+                              record.status === 'late' ? 'warning' : 'info'
+                            }`}>
+                              {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                            </span>
+                          </td>
+                          <td style={{ color: '#64748b' }}>{record.note || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination
+                  currentPage={weeklyPage}
+                  totalItems={weeklyRecords.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  onPageChange={setWeeklyPage}
+                />
+              </>
             ) : (
               <p style={{ padding: '1.5rem', color: '#64748b' }}>No weekly records found.</p>
             )}
           </div>
 
-          {attendanceData.finePayments && attendanceData.finePayments.length > 0 && (
+          {finePayments.length > 0 && (
             <div className="table-container mt-4">
               <h3 style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', margin: 0 }}>Fine Payments</h3>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Paid On</th>
-                    <th>Amount</th>
-                    <th>Note</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attendanceData.finePayments.map((payment, index) => (
-                    <tr key={index}>
-                      <td>{moment(payment.paidOn).format('MMMM Do YYYY h:mm A')}</td>
-                      <td style={{ color: 'var(--secondary-color)', fontWeight: 500 }}>
-                        ₹{payment.amount}
-                      </td>
-                      <td style={{ color: '#64748b' }}>{payment.note || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                <div className="table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Paid On</th>
+                        <th>Amount</th>
+                        <th>Note</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedFines.map((payment, index) => (
+                        <tr key={index}>
+                          <td>{moment(payment.paidOn).format('MMMM Do YYYY h:mm A')}</td>
+                          <td style={{ color: 'var(--secondary-color)', fontWeight: 500 }}>
+                            ₹{payment.amount}
+                          </td>
+                          <td style={{ color: '#64748b' }}>{payment.note || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination
+                  currentPage={finePage}
+                  totalItems={finePayments.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  onPageChange={setFinePage}
+                />
+              </>
             </div>
           )}
         </>

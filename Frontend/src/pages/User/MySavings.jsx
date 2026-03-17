@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import moment from 'moment';
+import Pagination from '../../components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 const MySavings = () => {
   const [savingsData, setSavingsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchSavings = async () => {
@@ -25,6 +29,12 @@ const MySavings = () => {
   if (loading) return <div className="spinner"></div>;
   if (error) return <div className="card" style={{ color: 'var(--danger)' }}>{error}</div>;
   if (!savingsData) return <div className="card">No savings data available.</div>;
+
+  const payments = savingsData.payments || [];
+  const paginatedPayments = payments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div>
@@ -49,29 +59,39 @@ const MySavings = () => {
 
       <div className="table-container mt-4">
         <h3 style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', margin: 0 }}>Savings History</h3>
-        {savingsData.payments && savingsData.payments.length > 0 ? (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Week Starting</th>
-                <th>Paid On</th>
-                <th>Amount</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {savingsData.payments.map((payment, index) => (
-                <tr key={index}>
-                  <td>{moment(payment.weekStartDate).format('MMMM Do YYYY')}</td>
-                  <td>{moment(payment.paidOn).format('MMMM Do YYYY')}</td>
-                  <td style={{ color: 'var(--secondary-color)', fontWeight: 500 }}>
-                    ₹{payment.amount}
-                  </td>
-                  <td style={{ color: '#64748b' }}>{payment.note || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {payments.length > 0 ? (
+          <>
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Week Starting</th>
+                    <th>Paid On</th>
+                    <th>Amount</th>
+                    <th>Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedPayments.map((payment, index) => (
+                    <tr key={index}>
+                      <td>{moment(payment.weekStartDate).format('MMMM Do YYYY')}</td>
+                      <td>{moment(payment.paidOn).format('MMMM Do YYYY')}</td>
+                      <td style={{ color: 'var(--secondary-color)', fontWeight: 500 }}>
+                        ₹{payment.amount}
+                      </td>
+                      <td style={{ color: '#64748b' }}>{payment.note || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={payments.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
+          </>
         ) : (
           <p style={{ padding: '1.5rem', color: '#64748b' }}>No savings payment history found.</p>
         )}

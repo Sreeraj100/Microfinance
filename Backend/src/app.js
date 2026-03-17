@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
+import path from "path";
+
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -10,33 +12,38 @@ import { startInterestCron } from "./utils/interestCron.js";
 
 dotenv.config();
 
-// Connect to MongoDB
+// Connect DB
 connectDB();
 
 const app = express();
 
-// Security & CORS middleware
+// Middleware
 app.use(helmet());
-// Accept all incoming requests
 app.use(cors({ origin: "*" }));
-
-// Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Routes
+// API Routes
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
 
-// Health check
-app.get("/", (req, res) => {
-  res.json({ message: "User Management API is running" });
+// ✅ FINAL FIX (no more path issues)
+const distPath = path.join(process.cwd(), "dist");
+
+// Serve frontend
+app.use(express.static(distPath));
+
+// Handle React routes
+app.get("*", (req, res) => {
+  if (!req.originalUrl.startsWith("/api")) {
+    res.sendFile(path.join(distPath, "index.html"));
+  }
 });
 
-// Start 28-day loan interest cron job
+// Start cron
 startInterestCron();
 
-// Error handling middleware
+// Error handlers (LAST)
 app.use(notFound);
 app.use(errorHandler);
 

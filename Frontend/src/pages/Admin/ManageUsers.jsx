@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 import moment from 'moment';
+import Pagination from '../../components/Pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
@@ -9,6 +12,7 @@ const ManageUsers = () => {
   const [editUser, setEditUser] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', role: 'user' });
   const [editLoading, setEditLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -33,6 +37,8 @@ const ManageUsers = () => {
       await api.delete(`/admin/users/${id}`);
       toast.success('User deleted successfully');
       setUsers(prev => prev.filter(u => u._id !== id));
+      // Reset to page 1 if current page becomes empty
+      setCurrentPage(1);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete user');
     }
@@ -60,6 +66,11 @@ const ManageUsers = () => {
 
   if (loading) return <div className="spinner"></div>;
 
+  const paginatedUsers = users.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div>
       <div className="flex-between mb-4">
@@ -73,47 +84,55 @@ const ManageUsers = () => {
         </div>
       ) : (
         <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Joined Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => (
-                <tr key={user._id}>
-                  <td style={{ fontWeight: 500 }}>{user.name}</td>
-                  <td style={{ color: '#64748b' }}>{user.email}</td>
-                  <td>
-                    <span className={`badge badge-${user.role === 'admin' ? 'info' : 'success'}`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td>{moment(user.createdAt).format('MMM Do YYYY')}</td>
-                  <td style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button
-                      className="badge badge-info"
-                      style={{ border: 'none', cursor: 'pointer', padding: '0.35rem 0.75rem' }}
-                      onClick={() => openEdit(user)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="badge badge-danger"
-                      style={{ border: 'none', cursor: 'pointer', padding: '0.35rem 0.75rem' }}
-                      onClick={() => handleDelete(user._id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Joined Date</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedUsers.map(user => (
+                  <tr key={user._id}>
+                    <td style={{ fontWeight: 500 }}>{user.name}</td>
+                    <td style={{ color: '#64748b' }}>{user.email}</td>
+                    <td>
+                      <span className={`badge badge-${user.role === 'admin' ? 'info' : 'success'}`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td>{moment(user.createdAt).format('MMM Do YYYY')}</td>
+                    <td style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        className="badge badge-info"
+                        style={{ border: 'none', cursor: 'pointer', padding: '0.35rem 0.75rem' }}
+                        onClick={() => openEdit(user)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="badge badge-danger"
+                        style={{ border: 'none', cursor: 'pointer', padding: '0.35rem 0.75rem' }}
+                        onClick={() => handleDelete(user._id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={users.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
 
