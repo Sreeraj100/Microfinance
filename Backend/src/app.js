@@ -13,11 +13,11 @@ import { startInterestCron } from "./utils/interestCron.js";
 
 dotenv.config();
 
-
+// Fix __dirname (ESM)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Connect to MongoDB
+// Connect DB
 connectDB();
 
 const app = express();
@@ -35,12 +35,16 @@ app.use("/api/admin", adminRoutes);
 // Serve React frontend
 app.use(express.static(path.join(__dirname, "../dist")));
 
+// Handle non-API routes (React)
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../dist/index.html"));
+  if (!req.originalUrl.startsWith("/api")) {
+    res.sendFile(path.join(__dirname, "../dist/index.html"));
+  }
 });
 
-// Start cron job
+// Start cron
 startInterestCron();
+
 
 app.use(notFound);
 app.use(errorHandler);
