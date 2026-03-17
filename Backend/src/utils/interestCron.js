@@ -34,7 +34,11 @@ const applyLoanInterest = async () => {
       // Compute current balance
       let balance = 0;
       for (const tx of transactions) {
-        if (tx.type === "loan" || tx.type === "interest" || tx.type === "fine") {
+        if (
+          tx.type === "loan" ||
+          tx.type === "interest" ||
+          tx.type === "fine"
+        ) {
           balance += tx.amount;
         } else if (tx.type === "repayment") {
           balance -= tx.amount;
@@ -64,7 +68,7 @@ const applyLoanInterest = async () => {
 
       const now = new Date();
       const daysSinceReference = Math.floor(
-        (now - referenceDate) / (1000 * 60 * 60 * 24)
+        (now - referenceDate) / (1000 * 60 * 60 * 24),
       );
 
       // Only apply interest if 28 days have passed
@@ -86,13 +90,13 @@ const applyLoanInterest = async () => {
       });
 
       console.log(
-        `[InterestCron] Applied ₹${interestAmount} interest for user ${user.name} (balance: ₹${balance.toFixed(2)})`
+        `[InterestCron] Applied ₹${interestAmount} interest for user ${user.name} (balance: ₹${balance.toFixed(2)})`,
       );
       applied++;
     }
 
     console.log(
-      `[InterestCron] Done — applied: ${applied}, skipped: ${skipped}`
+      `[InterestCron] Done — applied: ${applied}, skipped: ${skipped}`,
     );
   } catch (err) {
     console.error("[InterestCron] Error applying interest:", err.message);
