@@ -359,7 +359,7 @@ Contributions are welcome! Please follow the steps below:
 
 - Follow the existing code structure and naming conventions.
 - Keep pull requests focused — one feature or fix per PR.
-- Write meaningful commit messages (prefer [Conventional Commits](https://www.conventionalcommits.org/)).
+- Write meaningful commit messages prefer [Conventional Commits](https://www.conventionalcommits.org/).
 - Do not commit `.env` files or secrets.
 - Ensure `npm run lint` passes in the `Frontend/` directory before submitting.
 
